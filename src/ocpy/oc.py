@@ -1,11 +1,11 @@
-from typing import Union, Optional, Dict, Self, Callable, List
+from typing import Union, Optional, Dict, Self, Callable, List, Literal
 from numpy.typing import ArrayLike
 from lmfit.model import ModelResult
 from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ocpy.custom_types import ArrayReducer, BinarySeq, NumberOrParam
+from ocpy.custom_types import ArrayReducer, NumberOrParam
 from ocpy.utils import Fixer
 from ocpy.model_oc import OCModel, ModelComponentModel, ParameterModel
 from dataclasses import dataclass
@@ -21,7 +21,6 @@ class Parameter(ParameterModel):
     fixed: Optional[bool]  = False
     distribution: str      = "truncatednormal"
 
-
 class ModelComponent(ModelComponentModel):
     params: Dict[str, Parameter]
 
@@ -29,7 +28,6 @@ class ModelComponent(ModelComponentModel):
     _atan2 = staticmethod(np.arctan2)
 
     def set_math(self, mathmod):
-        """Inject backend math (np or pm.math)."""
         self.math_class = mathmod
         if pm is not None and mathmod is getattr(pm, "math", None):
             self._atan2 = getattr(pm.math, "arctan2", getattr(pt, "arctan2", np.arctan2))
@@ -68,7 +66,7 @@ class Quadratic(ModelComponent):
     def model_func(self, x, q):
         return q * (x ** 2)
 
-# Kalmalı mı emin değilim şimdilik test atlanabilir
+
 class Sinusoidal(ModelComponent):
     name = "sinusoidal"
 
@@ -101,7 +99,7 @@ class Keplerian(ModelComponent):
         e:     NumberOrParam = 0.0,
         omega: NumberOrParam = 0.0,
         P:     NumberOrParam = None,
-        T0:     NumberOrParam = None,
+        T0:    NumberOrParam = None,
         name:  Optional[str] = None,
     ) -> None:
         if name is not None:
@@ -111,50 +109,39 @@ class Keplerian(ModelComponent):
             "e":     self._param(e),
             "omega": self._param(omega),
             "P":     self._param(P),
-            "T0":     self._param(T0),
+            "T0":    self._param(T0),
         }
 
-    def _wrap_to_pi(self, M):
+    def _kepler_solve(self, M, e, n_iter: int = 5):
         m = self.math_class
-        return self._atan2(m.sin(M), m.cos(M))
-
-    def _kepler_solve(self, M, e, n_iter: int = 8):
-        m = self.math_class
-        M = self._wrap_to_pi(M)
-        e = m.clip(e, 0.0, 1.0 - 1e-12)
-        E = M + e * m.sin(M)
+        E = M 
         for _ in range(n_iter):
-            f  = E - e * m.sin(E) - M
-            fp = 1.0 - e * m.cos(E)
-            E  = E - f / fp
+            f_val = E - e * m.sin(E) - M
+            f_der = 1.0 - e * m.cos(E)
+            E = E - f_val / f_der
         return E
 
     def model_func(self, x, amp, e, omega, P, T0):
-        m   = self.math_class
-        wr  = omega * (np.pi / 180.0)          
-        M   = 2.0 * np.pi * (x - T0) / P
-        E   = self._kepler_solve(M, e)
+        m = self.math_class
+        
+        w_rad = omega * (np.pi / 180.0)
+        M = 2.0 * np.pi * (x - T0) / P
+        E = self._kepler_solve(M, e)
+        
 
-        cosE     = m.cos(E)
-        sinE     = m.sin(E)
-        one_me2  = m.maximum(0.0, 1.0 - e*e)
-        sqrt1me2 = m.sqrt(one_me2)
+        sqrt_term = m.sqrt((1.0 + e) / (1.0 - e))
+        tan_half_E = m.tan(E / 2.0)
+        true_anom = 2.0 * m.arctan(sqrt_term * tan_half_E)
+        
 
-        denom_E  = 1.0 - e * cosE
-        sin_nu   = (sqrt1me2 * sinE) / denom_E
-        cos_nu   = (cosE - e) / denom_E
+        denom_factor = m.sqrt(1.0 - (e**2) * (m.cos(w_rad))**2)
+        amp_term = amp / denom_factor
+        
+        term1 = ((1.0 - e**2) / (1.0 + e * m.cos(true_anom))) * m.sin(true_anom + w_rad)
+        term2 = e * m.sin(w_rad)
+        
+        return amp_term * (term1 + term2)
 
-        sin_nu_plus_w = sin_nu * m.cos(wr) + cos_nu * m.sin(wr)
-        irwin_pref    = (1.0 - e*e) / (1.0 + e * cos_nu)
-        core          = irwin_pref * sin_nu_plus_w + e * m.sin(wr)
-
-        norm = m.sqrt(m.maximum(0.0, 1.0 - (e * m.cos(wr))**2))
-
-        return (amp / norm) * core
-
-
-# Bir şeyler denemek için duruyor teste gerek yok
-# TODO
 class KeplerianOld(ModelComponent):
     name = "keplerian"
 
@@ -216,7 +203,7 @@ class OC(OCModel):
         minimum_time: Optional[ArrayLike] = None,
         minimum_time_error: Optional[ArrayLike] = None,
         weights: Optional[ArrayLike] = None,
-        minimum_type: Optional[ArrayLike] = None,  # 0/1 için de böyle yazabiliriz
+        minimum_type: Optional[ArrayLike] = None,
         labels: Optional[ArrayLike] = None,
         cycle: Optional[ArrayLike] = None,
     ):
@@ -259,7 +246,7 @@ class OC(OCModel):
                 rename_map = columns
             df = df.rename(columns=rename_map)
 
-        # DataFrame kolonları Series, ama init ArrayLike kabul ediyor → direkt geçebiliriz
+
         kwargs = {c: (df[c] if c in df.columns else None) for c in expected}
         return cls(**kwargs)
 
@@ -589,4 +576,41 @@ class OC(OCModel):
         b: Optional["ParameterModel"] = None,
     ) -> "ModelComponentModel":
         pass
+
+    def plot(
+        self,
+        model: Union["InferenceData", "ModelResult", List["ModelComponent"]] = None,
+        *,
+        ax=None,
+        ax_res=None,
+        residuals: bool = True,
+        title: Optional[str] = None,
+        x_col: str = "cycle",
+        y_col: str = "oc",
+        fig_size: tuple = (10, 7),
+        plot_kwargs: Optional[dict] = None,
+        extension_factor: float = 0.05
+    ):
+        from .visualization import Plot
+        return Plot.plot(
+            self,
+            model=model,
+            ax=ax,
+            ax_res=ax_res,
+            residuals=residuals,
+            title=title,
+            x_col=x_col,
+            y_col=y_col,
+            fig_size=fig_size,
+            plot_kwargs=plot_kwargs,
+            extension_factor=extension_factor
+        )
+
+    def corner(self, model: "InferenceData", cornerstyle: Literal["corner", "arviz"] = "corner", units: Optional[Dict[str, str]] = None, **kwargs):
+        from .visualization import Plot
+        return Plot.plot_corner(model, cornerstyle=cornerstyle, units=units, **kwargs)
+
+    def trace(self, model: "InferenceData", **kwargs):
+        from .visualization import Plot
+        return Plot.plot_trace(model, **kwargs)
     
