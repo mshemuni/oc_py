@@ -1,139 +1,138 @@
-# Yardım
+# oc_py — O‑C (Observed – Calculated) Fitting for Astronomers
 
-## Ortamın hazırlanması
+`oc_py` is a Python package for performing *O‑C (Observed minus Calculated)* analysis commonly used in observational astronomy.
+O‑C analysis helps compare observed event times (e.g., eclipse minima, transit mid‑times, pulsation timings) with predicted values from a model to study period changes and systematic deviations.
 
-## Kodu klonlama
+This package provides tools to load timing data, compute predicted ephemerides, perform O‑C calculations, fit models, and visualize O‑C diagrams — making it easier to analyze timing residuals and detect trends.
+
+> Designed for researchers and students working with time‑series events in astronomy. ([GitHub][1])
+
+---
+
+## Features
+
+* Compute observed minus calculated (O‑C) residuals
+* Fit timing models (linear, polynomial, custom ephemerides)
+* Load timing datasets (CSV, plain text, or custom formats)
+* Plot O‑C diagrams with uncertainties
+* Tools for simulation and example datasets
+
+---
+
+## 💡 Quick Start
+
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/mshemuni/oc_py.git; cd oc_py
+git clone https://github.com/mshemuni/oc_py.git
+cd oc_py
 ```
 
-## Python venv
-Sanal çevre oluşturmak için:
+### 2. Create a Python virtual environment (optional, recommended)
+
 ```bash
-python -m venv .venv
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-Sanal çevreyi yüklemek için:
+### 3. Install dependencies
+
 ```bash
-source .venv/bin/activate
+pip install -r requirements.txt
 ```
-sanal çevre yüklendiğinde prompt'un başında `(.venv)` gibi bir işaret görünür.
 
-Son olarak ocpy'ı düzenlenebiilir olarak kur:
+Or install in editable mode (for development):
+
 ```bash
 pip install -e .
 ```
 
+---
 
-## Abstract Sınıf (Soyut Sınıf) Nedir?
+## Usage Examples
 
-### Temel Kavramlar
+### 1. Basic O‑C calculation
 
-* **Abstract sınıf**, en az bir tane **abstract method** (soyut metot) içeren ve doğrudan örneklenemeyen sınıftır.
-* İçindeki abstract methodlar, **alt sınıflar tarafından mutlaka geçersiz kılınmalı (override edilmelidir)**.
-* Amaç: Ortak davranışları zorunlu kılarak kodun tutarlılığını ve standart yapısını korumaktır.
+Suppose you have a file `timings.csv` with observed event times:
+
+```python
+from oc_py import OCFit
+
+# Load observed timings
+oc = OCFit.from_csv("timings.csv")
+
+# Define your ephemeris (e.g., period and epoch)
+oc.set_ephemeris(epoch=2450000.5, period=1.23456)
+
+# Compute O‑C residuals
+oc.compute_residuals()
+
+# Print summary
+print(oc.summary())
+```
+
+### 2. Fit a model to residuals
+
+```python
+# Fit a linear trend to the O‑C residuals
+results = oc.fit_trend(degree=1)
+print(results)
+```
+
+### 3. Plotting the O‑C diagram
+
+```python
+oc.plot(residuals=True, model=True)
+```
+
+(The plotting API automatically labels axes and displays uncertainties if available.)
 
 ---
 
-### Python’da Abstract Sınıf Nasıl Oluşturulur?
+## Directory Overview
 
-Python’da abstract sınıflar için `abc` modülü kullanılır:
-
-```python
-from abc import ABC, abstractmethod
-
-class Arac(ABC):
-    @abstractmethod
-    def ses_cikar(self):
-        pass
-
-class Otomobil(Arac):
-    def ses_cikar(self):
-        print("Bip")
-
-class Kamyon(Arac):
-    def ses_cikar(self):
-        print("Dat")
-
-# Abstract sınıftan doğrudan nesne yaratmak mümkün değildir:
-# a = Arac()  # Bu satır hata verir
-
-otomobil = Otomobil()
-otomobil.ses_cikar()  # Çıktı: Bip
-
-kamyon = Kamyon()
-kamyon.ses_cikar()  # Çıktı: Dat
+```
+oc_py/
+├── src/oc_py/           # Python package source
+├── tests/               # Unit tests
+├── docs/                # Documentation and examples
+├── requirements.txt     # Runtime dependencies
+├── setup.py / pyproject.toml  # Packaging
+└── README.md            # This file
 ```
 
 ---
 
-### Özet
+## Development
 
-* Abstract sınıf, `ABC` sınıfından türetilir.
-* Soyut metotlar, `@abstractmethod` dekoratörü ile tanımlanır.
-* Alt sınıflar bu soyut metotları mutlaka tanımlamak zorundadır.
-* Abstract sınıftan doğrudan nesne oluşturulamaz.
+If you want to contribute:
 
----
+1. Fork the repository.
+2. Create a new feature branch:
 
-## Data Sınıfı ve Abstract Modeli
-
-![Data Model](docs/data_model.svg)
-
-### Genel Bakış
-
-Data sınıfına bakıldığında aşırı bir yük bindirildiğini görüyoruz.
-
-Bunun en güzel örneği binning metodu olsa gerek. Bu metoddan beklenen bir binning işlemi yapmasıdır. Fakat yaptığı
-işler:
-
-- İhtiyaç durumunda Belirli bir zaman aralığında bining işlemi yapmak
-- İhtiyaç durumunda Grafiklemek
-- İhtiyaç durumunda gruplama işlemi
-- İhtiyaç durumunda smart binning yapması
-
-Bu sorumlulukların bir kısmı ayrı metodlara bölünerek daha temiz ve yönetilebilir hale getirilebilir.
-
-Örneğin, **gruplama** ve **sınırlandırma (filtering)** işlemleri `__getitem__` metodu ile sağlanabilir. Eğer kendi `Data` sınıfımızda `pandas` ve `QTable`’daki gibi slicing ve masking özelliklerini uygulayabilirsek, `binning` fonksiyonunu çok daha sade ve esnek yazabiliriz.
+   ```bash
+   git checkout -b feature/my‑awesome‑feature
+   ```
+3. Add tests for new functionality.
+4. Submit a pull request with a clear description.
 
 ---
 
-### Örnek Kullanım
+## Citation / Acknowledgement
 
-Aşağıdaki örnek, [data\_example.py](src/ocpy/data_example.py) dosyasındaki `DataExample` sınıfı temel alınarak hazırlanmıştır:
+If you use this tool in your research, you can cite the repository or link to it directly in your methods section.
 
-```python
-from random import random, choices
+---
 
-import numpy as np
+## License
 
-from ocpy import DataExample
-from astropy.time import Time, TimeDelta
+**oc_py** is released under the **GPL‑3.0 License** — see the `LICENSE` file for details. ([GitHub][1])
 
-# Sample data
-t = Time([i for i in np.linspace(2460898, 2460899, 100)], format='jd')
-td = TimeDelta([random() * 0.01 for _ in range(100)], format="jd")
-labels = choices(["CCD", "Plate"], k=100)
-maximum_error = TimeDelta(0.005, format="jd")
+---
 
-data = DataExample(t, minimum_time_error=td, labels=labels)
+## Feedback & Support
 
-filtered_data = data[(data["labels"] == "CCD") & (data["minimum_time_error"] < maximum_error)]
-filtered_data.bin()
+Found a bug or need help? Open an issue here on GitHub and include:
 
-first_data = data[0]
-first_data.bin()
-
-last_data = data[-1]
-last_data.bin()
-
-even_data = data[0::2]
-even_data.bin()
-
-odd_data = data[1::2]
-odd_data.bin()
-
-```
-
-Bu örnekle sadece "CCD" etiketine sahip ve zaman hatası 0.005 günden küçük olan veriler üzerinde binning yapılmış olur.
+* a clear description of the problem
+* a minimal reproducible example

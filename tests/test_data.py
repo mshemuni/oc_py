@@ -24,10 +24,11 @@ class TestData(TestCase):
         )
         import os
         try:
-            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w", newline="", encoding="utf-8") as tmp:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w", newline="",
+                                             encoding="utf-8") as tmp:
                 tmp_name = tmp.name
                 df.to_csv(tmp.name, index=False)
-            
+
             data = Data.from_file(
                 tmp_name,
                 {
@@ -188,7 +189,7 @@ class TestData(TestCase):
         the_error = random() * 2
         new_data = self.DATA.fill_errors(the_error)
         new_weighted_data = new_data.calculate_weights()
-        self.assertEqual(new_weighted_data["weights"].sum(), sum([1/np.pow(the_error, 2)] * len(new_data)))
+        self.assertEqual(new_weighted_data["weights"].sum(), sum([1 / np.pow(the_error, 2)] * len(new_data)))
 
     def test_calculate_weight_with_no_error(self):
         with self.assertRaises(ValueError):
@@ -197,6 +198,7 @@ class TestData(TestCase):
     def test_calculate_weights_custom_function(self):
         the_error = random() * 2
         new_data = self.DATA.fill_errors(the_error)
+
         def custom_function(data):
             return pd.Series([1] * len(data))
 

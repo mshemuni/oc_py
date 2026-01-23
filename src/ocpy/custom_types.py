@@ -1,4 +1,4 @@
-from typing import Union, List, Tuple, Literal, Callable
+from typing import Union, List, Tuple, Literal, Callable, Any
 
 import numpy as np
 from numpy._typing import NDArray
@@ -11,5 +11,5 @@ BinarySeq = Union[
 ]
 
 # A callable that takes a 1D ndarray and returns a numeric value
-ArrayReducer = Callable[[NDArray[np.floating]], Union[int, float, np.number]]
-NumberOrParam = Union[float, int, None, "Parameter"]
+ArrayReducer = Callable[[NDArray[np.floating]], int | float | np.number]
+NumberOrParam = float | int | None | Any

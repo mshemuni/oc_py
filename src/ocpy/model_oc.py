@@ -1,14 +1,14 @@
 from abc import abstractmethod, ABC
+from logging import Logger
 
-from typing import Union, Optional, Dict, Self, Callable, List, Any
+from typing import Dict, Self, Callable, List, Any
 from lmfit.model import ModelResult
 
 from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ocpy.custom_types import ArrayReducer
-from ocpy.custom_types import ArrayReducer, BinarySeq
+from .custom_types import ArrayReducer, BinarySeq
 
 
 class ParameterModel(ABC):
@@ -21,7 +21,7 @@ class ParameterModel(ABC):
 
 class ModelComponentModel(ABC):
     @abstractmethod
-    def __init__(self, args: Optional[List[ParameterModel]] = None) -> None:
+    def __init__(self, args: List[ParameterModel] | None = None, logger: Logger | None = None) -> None:
         """Constructor method"""
 
     @abstractmethod
@@ -32,28 +32,28 @@ class ModelComponentModel(ABC):
 class OCModel(ABC):
     @classmethod
     @abstractmethod
-    def from_file(cls, file: Union[str, Path], columns: Optional[Dict[str, str]] = None) -> Self:
+    def from_file(cls, file: str | Path, columns: Dict[str, str] | None = None) -> Self:
         """Read data from file"""
 
     @abstractmethod
     def bin(
             self,
             bin_count: int = 1,
-            bin_method: Optional[ArrayReducer] = None,
-            bin_error_method: Optional[ArrayReducer] = None,
-            bin_style: Optional[Callable[[pd.DataFrame, int], np.ndarray]] = None
+            bin_method: ArrayReducer | None = None,
+            bin_error_method: ArrayReducer | None = None,
+            bin_style: Callable[[pd.DataFrame, int], np.ndarray] | None = None
     ) -> Self:
         """Bins the data and returns each a new Self"""
 
-    def __init__(        
-        self,
-        minimum_time: List,
-        minimum_time_error: Optional[List] = None,
-        weights: Optional[List] = None,
-        minimum_type: Optional[BinarySeq] = None,
-        labels: Optional[List] = None,
-        ecorr: Optional[List] = None,
-        oc: Optional[List] = None,):
+    def __init__(
+            self,
+            minimum_time: List,
+            minimum_time_error: List | None = None,
+            weights: List | None = None,
+            minimum_type: BinarySeq | None = None,
+            labels: List | None = None,
+            ecorr: List | None = None,
+            oc: List | None = None, ):
         """Constructor method of oc class"""
 
     @abstractmethod
@@ -65,7 +65,7 @@ class OCModel(ABC):
         """Removes the fit from current data"""
 
     @abstractmethod
-    def fit(self, model_components: Union[List[ModelComponentModel], ModelComponentModel]) -> ModelResult:
+    def fit(self, model_components: List[ModelComponentModel] | ModelComponentModel) -> ModelResult:
         """Fits the given ModelComponents to the O-C"""
 
     @abstractmethod

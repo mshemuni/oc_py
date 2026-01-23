@@ -1,19 +1,19 @@
 import unittest
 import numpy as np
-import pymc as pm
 from ocpy.oc_pymc import OCPyMC
 from ocpy.oc import Parameter, Linear
+
 
 class TestOCPyMC(unittest.TestCase):
     def setUp(self):
         self.cycle = np.linspace(0, 100, 20)
         self.oc = 0.5 * self.cycle + 10 + np.random.normal(0, 0.1, 20)
         self.err = np.ones_like(self.cycle) * 0.1
-        
+
         self.oc_pymc = OCPyMC(
             cycle=self.cycle,
             oc=self.oc,
-            minimum_time=self.cycle, 
+            minimum_time=self.cycle,
             minimum_time_error=self.err,
             weights=np.ones_like(self.cycle)
         )
