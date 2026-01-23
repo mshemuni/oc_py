@@ -1,4 +1,4 @@
-![OC_PY](https://github.com/mshemuni/oc_py/actions/workflows/ci.yml/badge.svg)
+![OC_PY](https://github.com/mshemuni/oc_py/actions/workflows/OC_PY.yml/badge.svg)
 ![OC_PY](https://img.shields.io/badge/coverage-60%25-31c553)
 ![OC_PY](https://img.shields.io/badge/Win-%E2%9C%93-f5f5f5?logo=windows11)
 ![OC_PY](https://img.shields.io/badge/Ubuntu-%E2%9C%93-e95420?logo=Ubuntu)
