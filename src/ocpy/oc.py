@@ -912,6 +912,24 @@ class OC(OCModel):
 
     @classmethod
     def from_file(cls, file: str | Path, columns: Dict[str, str] | None = None) -> "OC":
+        """
+        Load O−C data from a file.
+
+        Supported formats are CSV and Excel.
+
+        Parameters
+        ----------
+        file : str or Path
+            Path to the input file.
+        columns : dict, optional
+            Mapping for column renaming. Keys are internal names,
+            values are file column names.
+
+        Returns
+        -------
+        OC
+            A new OC instance populated from the file.
+        """
         file_path = Path(file)
         if file_path.suffix.lower() == ".csv":
             df = pd.read_csv(file_path)
@@ -937,6 +955,23 @@ class OC(OCModel):
         return self.data.__str__()
 
     def __getitem__(self, item):
+        """
+        Return a subset of the O−C data.
+
+        If a string is passed, the corresponding column from the underlying
+        DataFrame is returned. If an integer or slice is passed, a new
+        OC instance containing the subset is returned.
+
+        Parameters
+        ----------
+        item : str, int, slice, or mask
+            The selector for the subset.
+
+        Returns
+        -------
+        OC or pd.Series
+            Subset of the data.
+        """
         self.logger.debug("Get item from the data")
 
         if isinstance(item, str):
@@ -1002,6 +1037,28 @@ class OC(OCModel):
             bin_count: int,
             smart_bin_period: float = 50.0
     ) -> np.ndarray:
+        """
+        Internal helper for gap-aware binning.
+
+        Identifies large gaps in data and attempts to place bin edges within
+        those gaps to avoid splitting clusters of observations.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The data to bin.
+        xcol : str
+            The name of the x-column.
+        bin_count : int
+            Target number of bins.
+        smart_bin_period : float
+            Threshold for identifying a "gap".
+
+        Returns
+        -------
+        np.ndarray
+            Array of bin edges (start, end).
+        """
         if smart_bin_period is None or smart_bin_period <= 0:
             raise ValueError("smart_bin_period must be a positive number for _smart_bins")
 
@@ -1065,6 +1122,25 @@ class OC(OCModel):
             bin_error_method: ArrayReducer | None = None,
             bin_style: Callable[[pd.DataFrame, int], np.ndarray] | None = None,
     ) -> Self:
+        """
+        Bin the O−C data into a smaller number of points.
+
+        Parameters
+        ----------
+        bin_count : int
+            Target number of bins.
+        bin_method : ArrayReducer, optional
+            Function to compute the binned value (default is weighted mean).
+        bin_error_method : ArrayReducer, optional
+            Function to compute the binned error (default is 1/sqrt(sum(weights))).
+        bin_style : callable, optional
+            Function that generates bin edges. If None, equal-length bins are used.
+
+        Returns
+        -------
+        OC
+            A new OC instance containing the binned data.
+        """
         self.logger.debug("Binning O−C data")
 
         if "cycle" in self.data.columns:
@@ -1149,6 +1225,19 @@ class OC(OCModel):
         )
 
     def merge(self, oc: Self) -> Self:
+        """
+        Merge this O−C dataset with another.
+
+        Parameters
+        ----------
+        oc : OC
+            The other O−C instance.
+
+        Returns
+        -------
+        OC
+            A new OC instance containing concatenated rows.
+        """
         self.logger.info("Merging O−C datasets")
 
         from copy import deepcopy
@@ -1245,6 +1334,21 @@ class OC(OCModel):
         )
 
     def residue(self, coefficients: "ModelResult") -> Self:
+        """
+        Compute residual O−C values after model subtraction.
+
+        Must be implemented by subclasses (e.g., OCLMFit).
+
+        Parameters
+        ----------
+        coefficients : ModelResult
+            Fitted model parameters.
+
+        Returns
+        -------
+        OC
+            New instance containing residuals.
+        """
         self.logger.info("calculating residue")
         pass
 
@@ -1299,6 +1403,11 @@ class OC(OCModel):
             amp: ParameterModel | None = None,
             P: ParameterModel | None = None,
     ) -> ModelComponentModel:
+        """
+        Fit a sinusoidal O−C model.
+
+        Must be implemented by subclasses.
+        """
         self.logger.info("Fitting O−C model")
         pass
 

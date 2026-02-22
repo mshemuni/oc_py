@@ -218,11 +218,11 @@ class Data(DataModel):
 
         Parameters
         ----------
-        table
+        df
             Target pandas DataFrame.
         col
             Name of the column to assign or fill.
-        value
+        values
             Value or sequence to assign.
 
         Notes

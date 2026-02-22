@@ -325,14 +325,6 @@ class OCPyMC(OC):
     def fit_keplerian(self, *, amp: float | Parameter | None = None, e: float | Parameter | None = None,
                       omega: float | Parameter | None = None, P: float | Parameter | None = None,
                       T0: float | Parameter | None = None, name: str | None = None, **kwargs) -> az.InferenceData:
-        comp = Keplerian(
-            amp=self._to_param(amp, default=0.001),
-            e=self._to_param(e, default=0.1),
-            omega=self._to_param(omega, default=90.0),
-            P=self._to_param(P, default=1000.0),
-            T0=self._to_param(T0, default=0.0),
-            name=name or "keplerian1",
-        )
         """
         Fit a Keplerian O−C model using Bayesian inference.
 
@@ -361,6 +353,14 @@ class OCPyMC(OC):
         arviz.InferenceData
             Posterior samples of the fitted model.
         """
+        comp = Keplerian(
+            amp=self._to_param(amp, default=0.001),
+            e=self._to_param(e, default=0.1),
+            omega=self._to_param(omega, default=90.0),
+            P=self._to_param(P, default=1000.0),
+            T0=self._to_param(T0, default=0.0),
+            name=name or "keplerian1",
+        )
         self.logger.info("Fitting keplerian O−C model")
 
         return self.fit([comp], **kwargs)

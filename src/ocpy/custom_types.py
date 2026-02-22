@@ -1,3 +1,7 @@
+"""
+Custom type definitions and type aliases for oc_py.
+"""
+
 from typing import Union, List, Tuple, Literal, Callable, Any
 
 import numpy as np
@@ -9,7 +13,11 @@ BinarySeq = Union[
     Tuple[Literal[0, 1], ...],
     NDArray[np.bool_],
 ]
+"""Type alias for a binary sequence (0/1 or bool), typically used for minimum classifications."""
 
 # A callable that takes a 1D ndarray and returns a numeric value
 ArrayReducer = Callable[[NDArray[np.floating]], int | float | np.number]
+"""Type alias for a function that reduces an array to a single number (e.g., mean, median)."""
+
 NumberOrParam = float | int | None | Any
+"""Type alias for a value that can be either a numeric literal or a Parameter instance."""
