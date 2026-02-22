@@ -1,146 +1,128 @@
+# ocpy — O‑C (Observed – Calculated) Analysis for Astronomers
+
 ![OC_PY](https://github.com/mshemuni/oc_py/actions/workflows/OC_PY.yml/badge.svg)
 ![OC_PY](https://img.shields.io/badge/coverage-60%25-31c553)
 ![OC_PY](https://img.shields.io/badge/Win-%E2%9C%93-f5f5f5?logo=windows11)
 ![OC_PY](https://img.shields.io/badge/Ubuntu-%E2%9C%93-e95420?logo=Ubuntu)
 ![OC_PY](https://img.shields.io/badge/MacOS-%E2%9C%93-dadada?logo=macos)
-![OC_PY](https://img.shields.io/badge/Python-%20311,%20312,%20313-3776ab?logo=python)
+![OC_PY](https://img.shields.io/badge/Python-%203.11,%203.12,%203.13,%203.14-3776ab?logo=python)
 ![OC_PY](https://img.shields.io/badge/LIC-GNU/GPL%20V3-a32d2a?logo=GNU)
 
-# oc_py — O‑C (Observed – Calculated) Fitting for Astronomers
-
-`oc_py` is a Python package for performing *O‑C (Observed minus Calculated)* analysis commonly used in observational astronomy.
-O‑C analysis helps compare observed event times (e.g., eclipse minima, transit mid‑times, pulsation timings) with predicted values from a model to study period changes and systematic deviations.
-
-This package provides tools to load timing data, compute predicted ephemerides, perform O‑C calculations, fit models, and visualize O‑C diagrams — making it easier to analyze timing residuals and detect trends.
-
-> Designed for researchers and students working with time‑series events in astronomy. ([GitHub][1])
+`ocpy` is a robust Python library designed for **O‑C (Observed – Calculated) analysis**, a core technique in astronomy for studying period variations in binary systems, transiting exoplanets, and pulsating stars.
 
 ---
 
-## Features
+## Key Features
 
-* Compute observed minus calculated (O‑C) residuals
-* Fit timing models (linear, polynomial, custom ephemerides)
-* Load timing datasets (CSV, plain text, or custom formats)
-* Plot O‑C diagrams with uncertainties
-* Tools for simulation and example datasets
+*   **Data Handling**: Seamlessly load timing data from Excel or CSV files.
+*   **Weighted Analysis**: Automatic weight calculation based on observational uncertainties.
+*   **Model Components**: Flexible building blocks including `Linear`, `Quadratic`, `Sinusoidal`, and `Keplerian` (Light-Time Effect) models.
+*   **Dual Fitting Engines**:
+    *   **Frequentist (LMFit)**: Fast non-linear least-squares optimization.
+    *   **Bayesian (PyMC)**: Full posterior inference with MCMC sampling for robust uncertainty quantification.
+*   **Visualization**: Specialized O‑C plotting with model overlays and residual analysis.
 
 ---
 
-## 💡 Quick Start
+## Quick Start
 
-### 1. Clone the repository
+### 1. Installation
 
+#### Via pip (Recommended)
 ```bash
+pip install ocpy
+```
+
+#### From Source
+```bash
+# Clone the repository
 git clone https://github.com/mshemuni/oc_py.git
 cd oc_py
-```
 
-### 2. Create a Python virtual environment (optional, recommended)
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-Or install in editable mode (for development):
-
-```bash
+# Install the package
 pip install -e .
 ```
 
----
+### 2. Basic Workflow
 
-## Usage Examples
-
-### 1. Basic O‑C calculation
-
-Suppose you have a file `timings.csv` with observed event times:
-
+#### Step 1: Load and Preprocess Data
 ```python
-from oc_py import OCFit
+from ocpy.data import Data
 
-# Load observed timings
-oc = OCFit.from_csv("timings.csv")
+# Load data from file
+data = Data.from_file("my_data.xlsx")
 
-# Define your ephemeris (e.g., period and epoch)
-oc.set_ephemeris(epoch=2450000.5, period=1.23456)
-
-# Compute O‑C residuals
-oc.compute_residuals()
-
-# Print summary
-print(oc.summary())
+# Calculate statistical weights (w = 1/sigma^2)
+data = data.calculate_weights()
 ```
 
-### 2. Fit a model to residuals
-
+#### Step 2: Calculate O-C Residuals
 ```python
-# Fit a linear trend to the O‑C residuals
-results = oc.fit_trend(degree=1)
-print(results)
+# Compute O-C relative to a reference ephemeris
+oc = data.calculate_oc(reference_minimum=2450000.5, reference_period=0.5, model_type="pymc")
 ```
 
-### 3. Plotting the O‑C diagram
-
+#### Step 3: Define Model and Fit (Bayesian Example)
 ```python
-oc.plot(residuals=True, model=True)
+from ocpy.oc import Linear, Quadratic, Parameter
+
+# Define priors for model components
+lin = Linear(
+    a=Parameter(value=0.0, std=1e-5, fixed=False),
+    b=Parameter(value=0.0, std=1e-3, fixed=False)
+)
+quad = Quadratic(
+    q=Parameter(value=0.0, std=1e-9, fixed=False)
+)
+
+# Fit model using PyMC (MCMC sampling)
+res = oc.fit([lin, quad], draws=2000, tune=1000, chains=4)
+
+# Visualize the result
+oc.plot(model=[lin, quad])
 ```
 
-(The plotting API automatically labels axes and displays uncertainties if available.)
+---
+
+## Bayesian Workflow Details
+
+`ocpy` leverages **PyMC** for sophisticated Bayesian inference. The standard workflow follows:
+
+1.  **Prior Specification**: Uses the `Parameter` class to define initial values, standard deviations, and optional bounds (Truncated Normal).
+2.  **Likelihood Selection**: Assumes a **Gaussian Likelihood** where residuals are normally distributed around the composite model.
+3.  **Composite Modeling**: Individual components are automatically summed to create the total predicted O‑C signal.
+4.  **Inference**: Utilizes the **NUTS (No-U-Turn Sampler)** to efficiently sample the posterior distribution.
 
 ---
 
-## Directory Overview
+## Project Structure
 
-```
-oc_py/
-├── src/oc_py/           # Python package source
-├── tests/               # Unit tests
-├── docs/                # Documentation and examples
-├── requirements.txt     # Runtime dependencies
-├── setup.py / pyproject.toml  # Packaging
-└── README.md            # This file
-```
+*   `src/ocpy/data.py`: Data container and O‑C arithmetic.
+*   `src/ocpy/oc.py`: Core model definitions and base classes.
+*   `src/ocpy/oc_pymc.py`: Bayesian inference implementation.
+*   `src/ocpy/oc_lmfit.py`: Frequentist optimization implementation.
+*   `docs/exe/`: Comprehensive examples (e.g., NY Vir, DD CrB datasets).
 
 ---
 
-## Development
+## Contributing
 
-If you want to contribute:
-
-1. Fork the repository.
-2. Create a new feature branch:
-
-   ```bash
-   git checkout -b feature/my‑awesome‑feature
-   ```
-3. Add tests for new functionality.
-4. Submit a pull request with a clear description.
-
----
-
-## Citation / Acknowledgement
-
-If you use this tool in your research, you can cite the repository or link to it directly in your methods section.
-
----
-
-## License
-
-**oc_py** is released under the **GPL‑3.0 License** — see the `LICENSE` file for details. ([GitHub][1])
+Contributions are welcome! Please ensure all code passes the `mypy` and `flake8` checks, and add unit tests for new model components in the `tests/` directory.
 
 ---
 
 ## Feedback & Support
 
-Found a bug or need help? Open an issue here on GitHub and include:
+Found a bug or need help? [Open an issue](https://github.com/mshemuni/oc_py/issues) here on GitHub and include:
+*   A clear description of the problem or feature request.
+*   A minimal reproducible example (code snippet and sample data if possible).
+*   Your environment details (Python version, OS).
 
-* a clear description of the problem
-* a minimal reproducible example
+---
+
+## License
+
+Distributed under the **GPL-3.0 License**. See `LICENSE` for more information.
