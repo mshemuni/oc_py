@@ -1,7 +1,3 @@
-"""
-Custom type definitions and type aliases for oc_py.
-"""
-
 from typing import Union, List, Tuple, Literal, Callable, Any
 
 import numpy as np
