@@ -6,7 +6,7 @@
 ![OC\_PY](https://img.shields.io/badge/Win-%E2%9C%93-f5f5f5?logo=windows11)
 ![OC\_PY](https://img.shields.io/badge/Ubuntu-%E2%9C%93-e95420?logo=Ubuntu)
 ![OC\_PY](https://img.shields.io/badge/MacOS-%E2%9C%93-dadada?logo=macos)
-![OC\_PY](https://img.shields.io/badge/Python-%203.11,%203.12,%203.13,%203.14-3776ab?logo=python)
+![OC\_PY](https://img.shields.io/badge/Python-%203.11,%203.12,%203.13-3776ab?logo=python)
 ![OC\_PY](https://img.shields.io/badge/LIC-GNU/GPL%20V3-a32d2a?logo=GNU)
 
 **Documentation**: [oc-py.readthedocs.io](https://oc-py.readthedocs.io/en/latest/)
